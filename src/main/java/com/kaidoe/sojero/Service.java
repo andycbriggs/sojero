@@ -1,22 +1,25 @@
 package com.kaidoe.sojero;
 
-public class Service 
-{
+import java.util.ArrayList;
+
+public class Service {
  
-	private String id;
-	private ServiceInterface serviceInterface;
+	private String serviceID;
+	private ServiceContext serviceContext;
+
+    private ArrayList<ServiceEventHandler> eventHandlers = new ArrayList<ServiceEventHandler>();
 
 	/**
 	 * Constructor for new Service.
 	 *
-	 * @param theServiceInterface parent Service interface
+	 * @param theServiceContext parent Service interface
 	 * @param theServiceID string identifier for the service
 	 */
-	public Service(ServiceInterface theServiceInterface, String theServiceID)
+	public Service(ServiceContext theServiceContext, String theServiceID)
 	{
 
-		id = theServiceID;
-		inf = serviceInterface;
+		serviceID = theServiceID;
+        serviceContext = theServiceContext;
 
 	}
 
@@ -25,11 +28,37 @@ public class Service
 	 *
 	 * @return ID of the Service
 	 */
-	public String getID()
+	public String getServiceID()
 	{
 
-		return id;
+		return serviceID;
 
 	}
 
+    public void trigger(ServiceEvent event)
+    {
+        serviceContext.zmqPublisher.sendMore("Event");
+        serviceContext.zmqPublisher.sendMore(serviceID);
+        serviceContext.zmqPublisher.sendMore(event.getEventID());
+        serviceContext.zmqPublisher.send(event.getData());
+    }
+
+    public void addEventHandler(ServiceEventHandler eventHandler)
+    {
+
+        eventHandlers.add(eventHandler);
+
+    }
+
+    public void onEvent(ServiceEvent event)
+    {
+
+        String eventID = event.getEventID();
+
+        for (ServiceEventHandler thisEventHandler : eventHandlers) {
+            if (thisEventHandler.getEventID().equals(eventID)) thisEventHandler.onServiceEvent(event);
+        }
+
+
+    }
 }
