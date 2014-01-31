@@ -31,34 +31,84 @@ public class Service {
 	public String getServiceID()
 	{
 
-		return serviceID;
+			return serviceID;
 
-	}
-
-    public void trigger(ServiceEvent event)
-    {
-        serviceContext.zmqPublisher.sendMore("Event");
-        serviceContext.zmqPublisher.sendMore(serviceID);
-        serviceContext.zmqPublisher.sendMore(event.getEventID());
-        serviceContext.zmqPublisher.send(event.getData());
     }
 
+    /**
+     * Emit an event on the network
+     *
+     * @param event SeviceMsg
+     */
+    public void trigger(ServiceMsg event)
+    {
+
+        serviceContext.emitEvent(event);
+
+    }
+
+    /**
+     * Register an event handler on the service
+     *
+     * @param eventHandler ServiceEventHandler
+     */
     public void addEventHandler(ServiceEventHandler eventHandler)
     {
+
+        registerAsSubscriber();
 
         eventHandlers.add(eventHandler);
 
     }
 
-    public void onEvent(ServiceEvent event)
+    /**
+     * Subscribes the context to the topic for this service
+     *
+     */
+    private void registerAsSubscriber() {
+
+        serviceContext.registerSubscriber(serviceID);
+
+    }
+
+    /**
+     * Handle incoming events from the context
+     *
+     * @param event ServiceMsg
+     */
+    public void onEvent(ServiceMsg event)
     {
-
-        String eventID = event.getEventID();
-
+        String eventID = event.getMethodID();
         for (ServiceEventHandler thisEventHandler : eventHandlers) {
             if (thisEventHandler.getEventID().equals(eventID)) thisEventHandler.onServiceEvent(event);
         }
-
-
     }
+
+    /**
+     * Factory methods for ServiceMsg objects
+     *
+     * @param eventID String
+     * @param data byte[]
+     * @return ServiceMsg
+     */
+    public ServiceMsg getEventMsg(String eventID, byte[] data)
+    {
+        return new ServiceMsg(serviceID, ServiceMsg.EVENT, eventID, data);
+    }
+
+    public ServiceMsg getCommandMsg(String commandtID, byte[] data)
+    {
+        return new ServiceMsg(serviceID, ServiceMsg.COMMAND, commandtID, data);
+    }
+
+    public ServiceMsg getRequestMsg(String requestID, byte[] data)
+    {
+        return new ServiceMsg(serviceID, ServiceMsg.REQUEST, requestID, data);
+    }
+
+    public ServiceMsg getResponseMsg(String requestID, byte[] data)
+    {
+        return new ServiceMsg(serviceID, ServiceMsg.RESPONSE, requestID, data);
+    }
+
 }

@@ -1,10 +1,13 @@
 package com.kaidoe.sojero;
 
 import org.junit.Test;
+
+import java.io.UnsupportedEncodingException;
+
 import static org.junit.Assert.*;
 
 /**
- * Full API Test
+ * Basic Provider / Consumer Test
  */
 
 public class TestBasicProviderConsumer
@@ -19,6 +22,7 @@ public class TestBasicProviderConsumer
             System.out.println("TestProvider starting");
 
             ServiceContext ctx = new ServiceContext();
+
             Service provider = ctx.getService("Provider");
 
             // basic events
@@ -32,8 +36,9 @@ public class TestBasicProviderConsumer
             {
 
                 System.out.println("TestProvider triggering message " + i);
-                ServiceEvent messageEvent = new ServiceEvent("Message");
-                messageEvent.set("Hello World");
+
+                ServiceMsg messageEvent = provider.getEventMsg("Message", "Hello World".getBytes());
+
                 // Trigger an event on the service
                 provider.trigger(messageEvent);
 
@@ -44,6 +49,8 @@ public class TestBasicProviderConsumer
                 }
 
             }
+
+            ctx.close();
 
         }
     }
@@ -59,11 +66,16 @@ public class TestBasicProviderConsumer
         }
 
         @Override
-        public void onServiceEvent(ServiceEvent event)
+        public void onServiceEvent(ServiceMsg event)
         {
             tc.count++;
-            String data = event.getData();
-            System.out.println("CounterEventHandler: Message " + tc.count + " received");
+            String data = null;
+            try {
+                data = new String(event.getEventData(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            System.out.println("CounterEventHandler: Message " + tc.count + " received - " + data);
 
         }
 
@@ -80,6 +92,9 @@ public class TestBasicProviderConsumer
             System.out.println("TestConsumer starting");
 
             ServiceContext ctx = new ServiceContext();
+
+            ctx.registerNode("tcp://127.0.0.1:14000");
+
             Service provider = ctx.getService("Provider");
 
             provider.addEventHandler(new CounterEventHandler("Message", this));
@@ -96,6 +111,8 @@ public class TestBasicProviderConsumer
 
             System.out.println("TestConsumer " + count + " messages recieved");
 
+            ctx.close();
+
             assertTrue(count == 10);
 
         }
@@ -107,10 +124,11 @@ public class TestBasicProviderConsumer
 
         TestProvider p = new TestProvider();
         TestConsumer c = new TestConsumer();
-        Thread t2 = new Thread(c);
+        Thread t2 = new Thread(c, "Consumer");
                 t2.start();
-        Thread t1 = new Thread(p);
+        Thread t1 = new Thread(p, "Provider");
         t1.start();
+        t1.join();
         t2.join();
 
     }

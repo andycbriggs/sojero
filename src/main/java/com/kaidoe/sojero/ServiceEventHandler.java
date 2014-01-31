@@ -14,9 +14,8 @@ public class ServiceEventHandler {
         return eventID;
     }
 
-    protected void onServiceEvent(ServiceEvent theEvent)
+    protected void onServiceEvent(ServiceMsg theEvent)
     {
-
 
 
     }
