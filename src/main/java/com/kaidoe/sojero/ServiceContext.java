@@ -9,9 +9,7 @@ import org.zeromq.ZMsg;
 public class ServiceContext
 {
 
-	private ArrayList<Service> servicesList = new ArrayList<Service>();;
-
-    ServiceContextPoller contextPoller;
+	private ArrayList<Service> servicesList = new ArrayList<Service>();
 
     private ZContext zmqContext;
     public ZMQ.Socket zmqPublisher;
@@ -20,13 +18,26 @@ public class ServiceContext
 	public ServiceContext()
 	{
 
+      initialize("tcp://*:14000");
+
+	}
+
+    public ServiceContext(String subAddress)
+    {
+
+        initialize(subAddress);
+
+    }
+
+    public void initialize(String subAddress)
+    {
         zmqContext = new ZContext();
 
         zmqPublisher = zmqContext.createSocket(ZMQ.PUB);
 
         // TODO: Service Discovery / Definition
 
-        zmqPublisher.bind("tcp://*:14000");
+        zmqPublisher.bind(subAddress);
 
         zmqSubscriber = zmqContext.createSocket(ZMQ.SUB);
 
@@ -36,12 +47,11 @@ public class ServiceContext
         // Start the poller
         contextPollerThread.start();
 
-	}
+    }
 
     public void close()
     {
 
-        contextPoller.requestStop();
         zmqContext.destroy();
 
     }
@@ -88,9 +98,17 @@ public class ServiceContext
 
     }
 
-    public void registerNode(String address) {
+    public void addServiceNode(ServiceNode serviceNode)
+    {
 
-        zmqSubscriber.connect(address);
+        zmqSubscriber.connect("tcp://" + serviceNode.getIpAddress() + ":" + serviceNode.getPubPort());
+
+    }
+
+    public void removeServiceNode(ServiceNode serviceNode)
+    {
+
+        zmqSubscriber.disconnect("tcp://" + serviceNode.getIpAddress() + ":" + serviceNode.getPubPort());
 
     }
 
@@ -107,17 +125,14 @@ public class ServiceContext
 
         }
 
-        public void requestStop()
-        {
-            flagStop = true;
-        }
-
         public void run() {
 
             while (!Thread.currentThread().isInterrupted() && !flagStop)
             {
 
-                ZMQ.PollItem[] items = new ZMQ.PollItem[] { new ZMQ.PollItem(zmqSubscriber, ZMQ.Poller.POLLIN) };
+                ZMQ.PollItem[] items = new ZMQ.PollItem[] {
+                        new ZMQ.PollItem(zmqSubscriber, ZMQ.Poller.POLLIN)
+                };
 
                 while (!Thread.currentThread().isInterrupted()) {
                     //  Tick once per second, pulling in arriving messages
@@ -127,9 +142,9 @@ public class ServiceContext
                         ZMsg msg = ZMsg.recvMsg(zmqSubscriber);
 
                         ServiceMsg serviceMsg = new ServiceMsg(msg);
+                        msg.destroy();
                         serviceContext.triggerEventOnService(serviceMsg.getServiceID(), serviceMsg);
 
-                        msg.destroy();
                     }
 
                 }
