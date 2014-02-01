@@ -1,0 +1,121 @@
+package com.kaidoe.sojero;
+
+import org.junit.Test;
+
+import java.io.IOException;
+
+/**
+ * Service Discovery Test
+ */
+public class TestServiceDiscovery {
+
+    public void printSDContents(String id, ServiceDiscovery sd)
+    {
+        System.out.print(id + " has");
+        for(ServiceNode serviceNode : sd.getServiceNodeList()) {
+            System.out.print(" " + serviceNode.getNodeUUIDAsString());
+        }
+        System.out.print("\n");
+    }
+
+    @Test
+    public void main() throws InterruptedException, IOException, ClassNotFoundException {
+
+        System.out.println("Timeout set to: 5 seconds");
+        ServiceDiscovery.setTimeoutMillis(5000);
+
+        // create discovery services
+        ServiceDiscovery sd1 = new ServiceDiscovery();
+        ServiceDiscovery sd2 = new ServiceDiscovery();
+        ServiceDiscovery sd3 = new ServiceDiscovery();
+
+        // create nodes
+        ServiceNode n1 = new ServiceNode("127.0.0.1","1");
+        ServiceNode n2 = new ServiceNode("127.0.0.1","2");
+        ServiceNode n3 = new ServiceNode("127.0.0.1","3");
+
+        System.out.println("Node UUIDs are: \n" +
+                "n1:" + n1.getNodeUUIDAsString() + "\n" +
+                "n2:" + n2.getNodeUUIDAsString() + "\n" +
+                "n3:" + n3.getNodeUUIDAsString()
+        );
+
+        // set nodes to services
+        sd1.setSelfServiceNode(n1);
+        sd2.setSelfServiceNode(n2);
+        sd3.setSelfServiceNode(n3);
+
+        System.out.println("SD1: Emit Beacon");
+        sd1.emitBeacon();
+
+        System.out.println("Sleep 1 second");
+        Thread.sleep(1000);
+
+        printSDContents("SD1",sd1);
+        printSDContents("SD2",sd2);
+        printSDContents("SD3",sd3);
+
+        assert(sd1.getServiceNodeList().size() == 0);
+        assert(sd2.getServiceNodeList().size() == 1);
+        assert(sd3.getServiceNodeList().size() == 1);
+
+        System.out.println("SD2: Emit Beacon");
+        sd2.emitBeacon();
+
+        System.out.println("Sleep 1 second");
+        Thread.sleep(1000);
+
+        printSDContents("SD1", sd1);
+        printSDContents("SD2", sd2);
+        printSDContents("SD3", sd3);
+
+        assert(sd1.getServiceNodeList().size() == 1);
+        assert(sd2.getServiceNodeList().size() == 1);
+        assert(sd3.getServiceNodeList().size() == 2);
+
+        System.out.println("SD2: Emit Beacon Again - Should remain unchanged");
+        sd2.emitBeacon();
+
+        System.out.println("Sleep 1 second");
+        Thread.sleep(1000);
+
+        printSDContents("SD1", sd1);
+        printSDContents("SD2", sd2);
+        printSDContents("SD3", sd3);
+
+        assert(sd1.getServiceNodeList().size() == 1);
+        assert(sd2.getServiceNodeList().size() == 1);
+        assert(sd3.getServiceNodeList().size() == 2);
+
+        System.out.println("Emit All 3 Beacons");
+        sd1.emitBeacon();
+        sd2.emitBeacon();
+        sd3.emitBeacon();
+
+        System.out.println("Sleep 1 second");
+        Thread.sleep(1000);
+
+        printSDContents("SD1", sd1);
+        printSDContents("SD2", sd2);
+        printSDContents("SD3", sd3);
+
+        assert(sd1.getServiceNodeList().size() == 2);
+        assert(sd2.getServiceNodeList().size() == 2);
+        assert(sd3.getServiceNodeList().size() == 2);
+
+        System.out.println("Sleep 6s to force timeouts of nodes");
+        Thread.sleep(6000);
+
+        System.out.println("All Nodes should now be forgotton");
+
+        printSDContents("SD1", sd1);
+        printSDContents("SD2", sd2);
+        printSDContents("SD3", sd3);
+
+        assert(sd1.getServiceNodeList().size() == 0);
+        assert(sd2.getServiceNodeList().size() == 0);
+        assert(sd3.getServiceNodeList().size() == 0);
+
+    }
+
+}

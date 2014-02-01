@@ -21,7 +21,7 @@ public class TestBasicProviderConsumer
 
             System.out.println("TestProvider starting");
 
-            ServiceContext ctx = new ServiceContext();
+            ServiceContext ctx = new ServiceContext("tcp://127.0.0.1:14002");
 
             Service provider = ctx.getService("Provider");
 
@@ -43,7 +43,7 @@ public class TestBasicProviderConsumer
                 provider.trigger(messageEvent);
 
                 try {
-                    Thread.sleep(10);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -91,9 +91,9 @@ public class TestBasicProviderConsumer
 
             System.out.println("TestConsumer starting");
 
-            ServiceContext ctx = new ServiceContext();
+            ServiceContext ctx = new ServiceContext("tcp://127.0.0.1:14001");
 
-            ctx.registerNode("tcp://127.0.0.1:14000");
+            ctx.addServiceNode(new ServiceNode("127.0.0.1", "14002")); //"tcp://127.0.0.1:14000");
 
             Service provider = ctx.getService("Provider");
 
@@ -118,17 +118,16 @@ public class TestBasicProviderConsumer
         }
     }
 
-
     @Test
     public void main() throws InterruptedException {
 
         TestProvider p = new TestProvider();
         TestConsumer c = new TestConsumer();
         Thread t2 = new Thread(c, "Consumer");
-                t2.start();
+        t2.start();
         Thread t1 = new Thread(p, "Provider");
         t1.start();
-        t1.join();
+
         t2.join();
 
     }
