@@ -55,11 +55,6 @@ public class ServiceNode implements Serializable {
         return nodeUUID.toString();
     }
 
-    @Override
-    public String toString() {
-        return getNodeUUIDAsString();
-    }
-
     public void pong() {
 
         pongTime = System.currentTimeMillis();

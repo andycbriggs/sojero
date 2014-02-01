@@ -35,8 +35,6 @@ public class ServiceContext
 
         zmqPublisher = zmqContext.createSocket(ZMQ.PUB);
 
-        // TODO: Service Discovery / Definition
-
         zmqPublisher.bind(subAddress);
 
         zmqSubscriber = zmqContext.createSocket(ZMQ.SUB);

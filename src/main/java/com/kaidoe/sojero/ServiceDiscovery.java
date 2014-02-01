@@ -3,7 +3,6 @@ package com.kaidoe.sojero;
 import java.io.IOException;
 import java.net.*;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Handles Node Discovery
@@ -33,14 +32,6 @@ public class ServiceDiscovery {
 
         ServiceDiscovery.TIMEOUT = timeoutMillis;
 
-    }
-
-    class PingPongTask extends TimerTask {
-        public void run() {
-
-            removeTimedOutNodes();
-
-        }
     }
 
     public synchronized void foundNode(ServiceNode serviceNode)
@@ -78,25 +69,19 @@ public class ServiceDiscovery {
         Iterator<ServiceNode> i = serviceNodeList.iterator();
 
         while(i.hasNext()) {
-
             if (currentTime - i.next().getPongTime() > ServiceDiscovery.TIMEOUT) i.remove();
-
         }
 
     }
 
     public synchronized List<ServiceNode> getServiceNodeList()
     {
-
         return serviceNodeList;
-
     }
 
     public synchronized void emitBeacon()
     {
-
         emitBeacon(selfServiceNode);
-
     }
 
     public synchronized void emitBeacon(ServiceNode serviceNode)
@@ -122,6 +107,20 @@ public class ServiceDiscovery {
         this.selfServiceNode = selfServiceNode;
     }
 
+    /**
+     * Handles removing timed out nodes
+     */
+    class PingPongTask extends TimerTask {
+        public void run() {
+
+            removeTimedOutNodes();
+
+        }
+    }
+
+    /**
+     * Handles incoming ServiceNode beacons
+     */
     class ServiceDiscoveryPoller extends Thread
     {
 
