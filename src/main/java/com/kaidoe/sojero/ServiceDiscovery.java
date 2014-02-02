@@ -9,23 +9,29 @@ import java.util.*;
  */
 public class ServiceDiscovery {
 
-    private ArrayList<ServiceNode> serviceNodeList = new ArrayList<ServiceNode>();
+    private final ArrayList<ServiceNode> serviceNodeList;
 
     private ServiceNode selfServiceNode;
+
+    private ServiceContext serviceContext;
 
     private static long TIMEOUT = 5000;
 
     protected static final int discoveryPort = 12880;
 
-    public ServiceDiscovery()
+    public ServiceDiscovery(ServiceContext serviceContext, ServiceNode selfServiceNode)
     {
+        this.serviceContext = serviceContext;
+
+        this.selfServiceNode = selfServiceNode;
+
+        serviceNodeList = new ArrayList<ServiceNode>();
 
         ServiceDiscoveryPoller sdp = new ServiceDiscoveryPoller(this);
         sdp.start();
 
         Timer timer = new Timer();
-        timer.schedule(new PingPongTask(), 0, ServiceDiscovery.TIMEOUT);
-
+        timer.schedule(new PingPongTask(), 0, ServiceDiscovery.TIMEOUT / 2);
     }
 
     public static void setTimeoutMillis(long timeoutMillis) {
@@ -38,9 +44,12 @@ public class ServiceDiscovery {
     {
 
         // if the node already exists, pong it!
-        for (ServiceNode thisServiceNode : serviceNodeList) {
-            if (thisServiceNode.getNodeUUIDAsString().equals(serviceNode.getNodeUUIDAsString())) {
-               serviceNode.pong();
+        Iterator<ServiceNode> i = serviceNodeList.iterator();
+
+        while(i.hasNext()) {
+            ServiceNode sn = i.next();
+            if (sn.getNodeUUIDAsString().equals(serviceNode.getNodeUUIDAsString())) {
+               sn.pong();
                return;
             }
         }
@@ -58,6 +67,7 @@ public class ServiceDiscovery {
     {
 
         serviceNodeList.add(serviceNode);
+        serviceContext.connectServiceNode(serviceNode);
 
     }
 
@@ -69,13 +79,18 @@ public class ServiceDiscovery {
         Iterator<ServiceNode> i = serviceNodeList.iterator();
 
         while(i.hasNext()) {
-            if (currentTime - i.next().getPongTime() > ServiceDiscovery.TIMEOUT) i.remove();
+            ServiceNode sn = i.next();
+            if (currentTime - sn.getPongTime() > ServiceDiscovery.TIMEOUT) {
+                serviceContext.disconnectServiceNode(sn);
+                i.remove();
+            }
         }
 
     }
 
     public synchronized List<ServiceNode> getServiceNodeList()
     {
+
         return serviceNodeList;
     }
 
@@ -104,7 +119,15 @@ public class ServiceDiscovery {
     }
 
     public void setSelfServiceNode(ServiceNode selfServiceNode) {
+
         this.selfServiceNode = selfServiceNode;
+
+    }
+
+    public int countServiceNodes() {
+
+        return serviceNodeList.size();
+
     }
 
     /**
@@ -113,6 +136,7 @@ public class ServiceDiscovery {
     class PingPongTask extends TimerTask {
         public void run() {
 
+            emitBeacon();
             removeTimedOutNodes();
 
         }

@@ -21,7 +21,7 @@ public class TestBasicProviderConsumer
 
             System.out.println("TestProvider starting");
 
-            ServiceContext ctx = new ServiceContext("tcp://127.0.0.1:14002");
+            ServiceContext ctx = new ServiceContext();
 
             Service provider = ctx.getService("Provider");
 
@@ -93,7 +93,7 @@ public class TestBasicProviderConsumer
 
             ServiceContext ctx = new ServiceContext("tcp://127.0.0.1:14001");
 
-            ctx.addServiceNode(new ServiceNode("127.0.0.1", "14002")); //"tcp://127.0.0.1:14000");
+            ctx.connectServiceNode(new ServiceNode("127.0.0.1", "14002")); //"tcp://127.0.0.1:14000");
 
             Service provider = ctx.getService("Provider");
 
@@ -127,8 +127,8 @@ public class TestBasicProviderConsumer
         t2.start();
         Thread t1 = new Thread(p, "Provider");
         t1.start();
-
         t2.join();
+        t1.join();
 
     }
 

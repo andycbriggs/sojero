@@ -9,7 +9,7 @@ import java.util.UUID;
 public class ServiceNode implements Serializable {
 
     private final String ipAddress;
-    private final String pubPort;
+    private final long pubPort;
     private UUID nodeUUID;
     private long pongTime;
 
@@ -26,7 +26,7 @@ public class ServiceNode implements Serializable {
         throw (new ClassNotFoundException());
     }
 
-    public ServiceNode(String ipAddress, String pubPort)
+    public ServiceNode(String ipAddress, long pubPort)
     {
         this.nodeUUID = UUID.randomUUID();
         this.ipAddress = ipAddress;
@@ -47,7 +47,7 @@ public class ServiceNode implements Serializable {
         return ipAddress;
     }
 
-    public String getPubPort() {
+    public long getPubPort() {
         return pubPort;
     }
 

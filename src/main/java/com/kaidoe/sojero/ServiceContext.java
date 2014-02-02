@@ -15,40 +15,43 @@ public class ServiceContext
     public ZMQ.Socket zmqPublisher;
     public ZMQ.Socket zmqSubscriber;
 
+    private ServiceContextPoller contextPoller;
+    private ServiceDiscovery serviceDiscovery;
+
 	public ServiceContext()
 	{
 
-      initialize("tcp://*:14000");
+        initialize();
 
 	}
 
-    public ServiceContext(String subAddress)
-    {
-
-        initialize(subAddress);
-
-    }
-
-    public void initialize(String subAddress)
+    public void initialize()
     {
         zmqContext = new ZContext();
 
+        // pub sub
         zmqPublisher = zmqContext.createSocket(ZMQ.PUB);
-
-        zmqPublisher.bind(subAddress);
-
+        long zmqPubPort = zmqPublisher.bindToRandomPort("tcp://*");
         zmqSubscriber = zmqContext.createSocket(ZMQ.SUB);
+        contextPoller = new ServiceContextPoller(this);
+        contextPoller.start();
 
-        ServiceContextPoller contextPoller = new ServiceContextPoller(this);
-        Thread contextPollerThread = new Thread(contextPoller);
+        ServiceNode selfServiceNode = new ServiceNode("127.0.0.1", zmqPubPort);
 
-        // Start the poller
-        contextPollerThread.start();
+        // service discovery
+        serviceDiscovery = new ServiceDiscovery(this, selfServiceNode);
 
     }
 
     public void close()
     {
+
+        contextPoller.setFlagStop();
+        try {
+            contextPoller.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         zmqContext.destroy();
 
@@ -73,7 +76,7 @@ public class ServiceContext
 		return theService;
 	}
 
-    private void triggerEventOnService(String theServiceID, ServiceMsg theServiceMsg)
+    private synchronized void triggerEventOnService(String theServiceID, ServiceMsg theServiceMsg)
     {
 
         for (Service thisService : servicesList) {
@@ -96,56 +99,70 @@ public class ServiceContext
 
     }
 
-    public void addServiceNode(ServiceNode serviceNode)
+    public void connectServiceNode(ServiceNode serviceNode)
     {
 
         zmqSubscriber.connect("tcp://" + serviceNode.getIpAddress() + ":" + serviceNode.getPubPort());
 
     }
 
-    public void removeServiceNode(ServiceNode serviceNode)
+    public void disconnectServiceNode(ServiceNode serviceNode)
     {
 
         zmqSubscriber.disconnect("tcp://" + serviceNode.getIpAddress() + ":" + serviceNode.getPubPort());
 
     }
 
-    class ServiceContextPoller implements Runnable
+    public int countServiceNodes() {
+
+        return serviceDiscovery.countServiceNodes();
+
+    }
+
+    class ServiceContextPoller extends Thread
     {
 
         private ServiceContext serviceContext;
-        private boolean flagStop = false;
+        private boolean flagStop;
 
         public ServiceContextPoller(ServiceContext theServiceContext)
         {
-            super();
+            super("ServiceContextPoller");
             serviceContext = theServiceContext;
+
+            flagStop = false;
+        }
+
+        public synchronized void setFlagStop()
+        {
+
+            flagStop = true;
 
         }
 
         public void run() {
 
-            while (!Thread.currentThread().isInterrupted() && !flagStop)
-            {
 
-                ZMQ.PollItem[] items = new ZMQ.PollItem[] {
-                        new ZMQ.PollItem(zmqSubscriber, ZMQ.Poller.POLLIN)
-                };
+            ZMQ.PollItem[] items = new ZMQ.PollItem[] {
+                    new ZMQ.PollItem(zmqSubscriber, ZMQ.Poller.POLLIN)
+            };
 
-                while (!Thread.currentThread().isInterrupted()) {
-                    //  Tick once per second, pulling in arriving messages
+            while (!this.isInterrupted() && !flagStop) {
+                //  Tick once per second, pulling in arriving messages
 
-                    ZMQ.poll(items, 10);
-                    if (items[0].isReadable()) {
-                        ZMsg msg = ZMsg.recvMsg(zmqSubscriber);
+                ZMQ.poll(items, 10);
+                if (items[0].isReadable()) {
+                    ZMsg msg = ZMsg.recvMsg(zmqSubscriber);
 
-                        ServiceMsg serviceMsg = new ServiceMsg(msg);
-                        msg.destroy();
-                        serviceContext.triggerEventOnService(serviceMsg.getServiceID(), serviceMsg);
-
-                    }
+                    ServiceMsg serviceMsg = new ServiceMsg(msg);
+                    msg.destroy();
+                    serviceContext.triggerEventOnService(serviceMsg.getServiceID(), serviceMsg);
 
                 }
+
+                if (flagStop) break;
+
+
 
             }
 

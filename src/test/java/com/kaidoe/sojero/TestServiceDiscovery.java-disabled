@@ -7,6 +7,7 @@ import java.io.IOException;
 /**
  * Service Discovery Test
  */
+
 public class TestServiceDiscovery {
 
     public void printSDContents(String id, ServiceDiscovery sd)
@@ -30,9 +31,9 @@ public class TestServiceDiscovery {
         ServiceDiscovery sd3 = new ServiceDiscovery();
 
         // create nodes
-        ServiceNode n1 = new ServiceNode("127.0.0.1","1");
-        ServiceNode n2 = new ServiceNode("127.0.0.1","2");
-        ServiceNode n3 = new ServiceNode("127.0.0.1","3");
+        ServiceNode n1 = new ServiceNode("127.0.0.1",1);
+        ServiceNode n2 = new ServiceNode("127.0.0.1",2);
+        ServiceNode n3 = new ServiceNode("127.0.0.1",3);
 
         System.out.println("Node UUIDs are: \n" +
                 "n1:" + n1.getNodeUUIDAsString() + "\n" +
