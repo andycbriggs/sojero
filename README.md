@@ -10,3 +10,18 @@ issues (in agile terms).
 Alongside this I will also have an issue label to keep track of the project Diary, a requirement of the project.
 By keeping a diary of each commit I can reference what code I was working on that day and will be using GitHub Gist's
 for keeping track of Unit tests.
+
+## Message Structure
+
+### Service Discovery
+Current uses Java object serialization, plan to use ZMsg across the board eventually.
+
+### Service Messages
+ZMsg with the following framing:
+
+|       1       |        2       |      3     |   4    |
+| :-----------: |:--------------:| :---------:|:------:|
+|   Service ID  |  Message Type  | Message ID |  Data  |
+
+Message Type indicates the handler type Command, Event or Request/Reply
+Message ID indicates the specific handler
