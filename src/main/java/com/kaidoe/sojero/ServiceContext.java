@@ -76,34 +76,27 @@ public class ServiceContext
 		return theService;
 	}
 
-    private synchronized void triggerEventOnService(String theServiceID, ServiceMsg theServiceMsg)
+    private synchronized void triggerEventOnService(String serviceID, ServiceMsg serviceMsg)
     {
 
-        for (Service thisService : servicesList) {
-            if (thisService.getServiceID().equals(theServiceID)) thisService.onServiceMsg(theServiceMsg);
+        for (Service service : servicesList) {
+            if (service.getServiceID().equals(serviceID)) service.onServiceMsg(serviceMsg);
         }
 
     }
 
-    public void emitEvent(ServiceMsg event)
+    public void emitServiceMsg(ServiceMsg event)
     {
 
         event.toZMsg().send(zmqPublisher, true);
 
     }
 
-    public void emitCommand(ServiceMsg command)
+
+    public void registerSubscriber(String serviceID)
     {
 
-        command.toZMsg().send(zmqPublisher, true);
-
-    }
-
-
-    public void registerSubscriber(String theServiceID)
-    {
-
-        zmqSubscriber.subscribe(theServiceID.getBytes());
+        zmqSubscriber.subscribe(serviceID.getBytes());
 
     }
 
@@ -137,40 +130,32 @@ public class ServiceContext
         {
             super("ServiceContextPoller");
             serviceContext = theServiceContext;
-
             flagStop = false;
         }
 
         public synchronized void setFlagStop()
         {
-
             flagStop = true;
-
         }
 
         public void run() {
-
 
             ZMQ.PollItem[] items = new ZMQ.PollItem[] {
                     new ZMQ.PollItem(zmqSubscriber, ZMQ.Poller.POLLIN)
             };
 
             while (!this.isInterrupted() && !flagStop) {
-                //  Tick once per second, pulling in arriving messages
 
                 ZMQ.poll(items, 10);
                 if (items[0].isReadable()) {
                     ZMsg msg = ZMsg.recvMsg(zmqSubscriber);
-
                     ServiceMsg serviceMsg = new ServiceMsg(msg);
                     msg.destroy();
+                    msg = null;
                     serviceContext.triggerEventOnService(serviceMsg.getServiceID(), serviceMsg);
-
                 }
 
                 if (flagStop) break;
-
-
 
             }
 

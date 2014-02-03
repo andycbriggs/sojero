@@ -1,26 +1,26 @@
 package com.kaidoe.sojero;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class Service {
  
 	private String serviceID;
 	private ServiceContext serviceContext;
 
-    private ArrayList<ServiceCommandHandler> commandHandlers = new ArrayList<ServiceCommandHandler>();
-    private ArrayList<ServiceEventHandler> eventHandlers = new ArrayList<ServiceEventHandler>();
+    private ArrayList<ServiceHandler> handlers = new ArrayList<ServiceHandler>();
 
 	/**
 	 * Constructor for new Service.
 	 *
-	 * @param theServiceContext parent Service interface
-	 * @param theServiceID string identifier for the service
+	 * @param serviceContext parent Service interface
+	 * @param serviceID string identifier for the service
 	 */
-	public Service(ServiceContext theServiceContext, String theServiceID)
+	public Service(ServiceContext serviceContext, String serviceID)
 	{
 
-		serviceID = theServiceID;
-        serviceContext = theServiceContext;
+		this.serviceID = serviceID;
+        this.serviceContext = serviceContext;
 
 	}
 
@@ -31,50 +31,42 @@ public class Service {
 	 */
 	public String getServiceID()
 	{
-
 			return serviceID;
-
     }
 
     /**
      * Emit an event on the network
      *
-     * @param event SeviceMsg
      */
-    public void trigger(ServiceMsg event)
+    public void trigger(String eventID, byte[] data)
     {
 
-        serviceContext.emitEvent(event);
+        serviceContext.emitServiceMsg(
+                new ServiceMsg(serviceID, ServiceMsg.MsgType.EVENT, eventID, data));
 
     }
 
-    public void execute(ServiceMsg command)
+    /**
+     * Trigger a command on the network
+     *
+     */
+    public void execute(String commandtID, byte[] data)
     {
 
-        serviceContext.emitCommand(command);
+        serviceContext.emitServiceMsg(
+                new ServiceMsg(serviceID, ServiceMsg.MsgType.COMMAND, commandtID, data));
 
     }
 
     /**
      * Register an event handler on the service
      *
-     * @param eventHandler ServiceEventHandler
+     * @param handler ServiceHandler
      */
-    public void addEventHandler(ServiceEventHandler eventHandler)
+    public void addHandler(ServiceHandler handler)
     {
-
         registerAsSubscriber();
-
-        eventHandlers.add(eventHandler);
-
-    }
-
-    public void addCommandHandler(ServiceCommandHandler commandHandler) {
-
-        registerAsSubscriber();
-
-        commandHandlers.add(commandHandler);
-
+        handlers.add(handler);
     }
 
     /**
@@ -90,52 +82,21 @@ public class Service {
     /**
      * Handle incoming events from the context
      *
-     * @param event ServiceMsg
+     * @param serviceMsg ServiceMsg
      */
-    public void onServiceMsg(ServiceMsg event)
+    public void onServiceMsg(ServiceMsg serviceMsg)
     {
 
-        Integer msgType = event.getMsgType();
+        Iterator<ServiceHandler> i = handlers.iterator();
 
-        if (msgType.equals(ServiceMsg.EVENT)) {
-            for (ServiceEventHandler thisEventHandler : eventHandlers) {
-                if (thisEventHandler.getEventID().equals(event.getMethodID())) thisEventHandler.onServiceEvent(event);
-            }
-        } else if (msgType.equals(ServiceMsg.COMMAND)) {
-            for (ServiceCommandHandler thisCommandHandler : commandHandlers) {
-                if (thisCommandHandler.getCommandID().equals(event.getMethodID())) thisCommandHandler.onServiceCommand(event);
-            }
+        while (i.hasNext()) {
+
+            ServiceHandler sh;
+            sh = i.next();
+            sh.handleServiceMsg(serviceMsg);
+
         }
 
     }
-
-    /**
-     * Factory methods for ServiceMsg objects
-     *
-     * @param eventID String
-     * @param data byte[]
-     * @return ServiceMsg
-     */
-    public ServiceMsg getEventMsg(String eventID, byte[] data)
-    {
-        return new ServiceMsg(serviceID, ServiceMsg.EVENT, eventID, data);
-    }
-
-    public ServiceMsg getCommandMsg(String commandtID, byte[] data)
-    {
-        return new ServiceMsg(serviceID, ServiceMsg.COMMAND, commandtID, data);
-    }
-
-    public ServiceMsg getRequestMsg(String requestID, byte[] data)
-    {
-        return new ServiceMsg(serviceID, ServiceMsg.REQUEST, requestID, data);
-    }
-
-    public ServiceMsg getResponseMsg(String requestID, byte[] data)
-    {
-        return new ServiceMsg(serviceID, ServiceMsg.RESPONSE, requestID, data);
-    }
-
-
 
 }

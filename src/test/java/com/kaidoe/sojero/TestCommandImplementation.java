@@ -25,9 +25,9 @@ public class TestCommandImplementation {
 
         Service clientService = client.getService("Counter");
 
-        clientService.addCommandHandler(new ServiceCommandHandler("Increment") {
+        clientService.addHandler(new ServiceCommandHandler("Increment") {
             @Override
-            public void onServiceCommand(ServiceMsg theCommand) {
+            public void onServiceMsg(ServiceMsg theCommand) {
                 System.out.println("RX: Command " +
                         new String(theCommand.getMsgData()) +
                 " received");
@@ -53,9 +53,7 @@ public class TestCommandImplementation {
 
         for (int i = 0; i < LOOPS; i++) {
             System.out.println("TX Command: " + String.valueOf(i));
-            serverService.execute(
-                    serverService.getCommandMsg("Increment", String.valueOf(i).getBytes()));
-
+            serverService.execute("Increment", String.valueOf(i).getBytes());
         }
 
         Thread.sleep(500);

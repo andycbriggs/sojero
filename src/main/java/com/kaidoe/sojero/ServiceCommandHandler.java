@@ -1,25 +1,10 @@
 package com.kaidoe.sojero;
 
+public class ServiceCommandHandler extends ServiceHandler {
 
-public class ServiceCommandHandler {
-
-    private String commandID;
-
-    public ServiceCommandHandler(String theCommandID)
+    public ServiceCommandHandler(String commandID)
     {
-        commandID = theCommandID;
-    }
-
-    public String getCommandID()
-    {
-        return commandID;
-    }
-
-    protected void onServiceCommand(ServiceMsg theCommandMsg)
-    {
-
-
-
+        super(commandID, ServiceMsg.MsgType.COMMAND);
     }
 
 }

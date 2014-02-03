@@ -113,7 +113,7 @@ public class ServiceDiscovery {
         s.close();
 
         } catch (IOException e) {
-        e.printStackTrace();
+            e.printStackTrace();
         }
 
     }
@@ -154,7 +154,7 @@ public class ServiceDiscovery {
 
         public ServiceDiscoveryPoller(ServiceDiscovery serviceDiscovery)
         {
-            super();
+            super("ServiceDiscoveryPoller");
             this.serviceDiscovery = serviceDiscovery;
 
             try {
@@ -180,7 +180,6 @@ public class ServiceDiscovery {
                     socket.receive(incoming);
                     ServiceNode receivedNode = ServiceNode.getFromByteArray(incoming.getData());
                     serviceDiscovery.foundNode(receivedNode);
-
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (ClassNotFoundException e) {

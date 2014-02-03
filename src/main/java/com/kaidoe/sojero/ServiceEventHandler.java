@@ -1,24 +1,10 @@
 package com.kaidoe.sojero;
 
-public class ServiceEventHandler {
+public class ServiceEventHandler extends ServiceHandler {
 
-    private String eventID;
-
-    public ServiceEventHandler(String theEventID)
+    public ServiceEventHandler(String eventID)
     {
-        eventID = theEventID;
-    }
-
-    public String getEventID()
-    {
-        return eventID;
-    }
-
-    protected void onServiceEvent(ServiceMsg theEvent)
-    {
-
-
-
+        super(eventID, ServiceMsg.MsgType.EVENT);
     }
 
 }
