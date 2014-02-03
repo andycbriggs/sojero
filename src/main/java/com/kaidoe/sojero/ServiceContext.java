@@ -80,7 +80,7 @@ public class ServiceContext
     {
 
         for (Service thisService : servicesList) {
-            if (thisService.getServiceID().equals(theServiceID)) thisService.onEvent(theServiceMsg);
+            if (thisService.getServiceID().equals(theServiceID)) thisService.onServiceMsg(theServiceMsg);
         }
 
     }
@@ -91,6 +91,14 @@ public class ServiceContext
         event.toZMsg().send(zmqPublisher, true);
 
     }
+
+    public void emitCommand(ServiceMsg command)
+    {
+
+        command.toZMsg().send(zmqPublisher, true);
+
+    }
+
 
     public void registerSubscriber(String theServiceID)
     {

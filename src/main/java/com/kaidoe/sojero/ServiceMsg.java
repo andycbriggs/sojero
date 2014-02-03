@@ -4,15 +4,15 @@ import org.zeromq.ZMsg;
 
 public class ServiceMsg {
 
-    public static Integer EVENT = 1;
-    public static Integer COMMAND = 2;
-    public static Integer REQUEST = 3;
-    public static Integer RESPONSE = 4;
+    public static final Integer EVENT = 1;
+    public static final Integer COMMAND = 2;
+    public static final Integer REQUEST = 3;
+    public static final Integer RESPONSE = 4;
 
     private String serviceID;
     private Integer msgType;
     private String methodID;
-    private byte[] eventData;
+    private byte[] msgData;
 
     /**
      * Constructor for outgoing messages
@@ -26,7 +26,7 @@ public class ServiceMsg {
         serviceID = theServiceID;
         msgType = theMsgType;
         methodID = theMethodID;
-        eventData = theEventData;
+        msgData = theEventData;
     }
 
     /**
@@ -38,7 +38,7 @@ public class ServiceMsg {
         serviceID = zMsg.popString();
         msgType = Integer.parseInt(zMsg.popString());
         methodID = zMsg.popString();
-        eventData = zMsg.pop().getData();
+        msgData = zMsg.pop().getData();
     }
 
     /**
@@ -52,7 +52,7 @@ public class ServiceMsg {
         ret.addString(serviceID);
         ret.addString(msgType.toString());
         ret.addString(methodID);
-        ret.add(eventData);
+        ret.add(msgData);
 
         return ret;
     }
@@ -73,12 +73,12 @@ public class ServiceMsg {
         this.methodID = methodID;
     }
 
-    public byte[] getEventData() {
-        return eventData;
+    public byte[] getMsgData() {
+        return msgData;
     }
 
-    public void setEventData(byte[] eventData) {
-        this.eventData = eventData;
+    public void setMsgData(byte[] msgData) {
+        this.msgData = msgData;
     }
 
     public Integer getMsgType() {

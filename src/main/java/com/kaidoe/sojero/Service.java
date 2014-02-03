@@ -7,6 +7,7 @@ public class Service {
 	private String serviceID;
 	private ServiceContext serviceContext;
 
+    private ArrayList<ServiceCommandHandler> commandHandlers = new ArrayList<ServiceCommandHandler>();
     private ArrayList<ServiceEventHandler> eventHandlers = new ArrayList<ServiceEventHandler>();
 
 	/**
@@ -47,6 +48,13 @@ public class Service {
 
     }
 
+    public void execute(ServiceMsg command)
+    {
+
+        serviceContext.emitCommand(command);
+
+    }
+
     /**
      * Register an event handler on the service
      *
@@ -58,6 +66,14 @@ public class Service {
         registerAsSubscriber();
 
         eventHandlers.add(eventHandler);
+
+    }
+
+    public void addCommandHandler(ServiceCommandHandler commandHandler) {
+
+        registerAsSubscriber();
+
+        commandHandlers.add(commandHandler);
 
     }
 
@@ -76,12 +92,21 @@ public class Service {
      *
      * @param event ServiceMsg
      */
-    public void onEvent(ServiceMsg event)
+    public void onServiceMsg(ServiceMsg event)
     {
-        String eventID = event.getMethodID();
-        for (ServiceEventHandler thisEventHandler : eventHandlers) {
-            if (thisEventHandler.getEventID().equals(eventID)) thisEventHandler.onServiceEvent(event);
+
+        Integer msgType = event.getMsgType();
+
+        if (msgType.equals(ServiceMsg.EVENT)) {
+            for (ServiceEventHandler thisEventHandler : eventHandlers) {
+                if (thisEventHandler.getEventID().equals(event.getMethodID())) thisEventHandler.onServiceEvent(event);
+            }
+        } else if (msgType.equals(ServiceMsg.COMMAND)) {
+            for (ServiceCommandHandler thisCommandHandler : commandHandlers) {
+                if (thisCommandHandler.getCommandID().equals(event.getMethodID())) thisCommandHandler.onServiceCommand(event);
+            }
         }
+
     }
 
     /**
@@ -110,6 +135,7 @@ public class Service {
     {
         return new ServiceMsg(serviceID, ServiceMsg.RESPONSE, requestID, data);
     }
+
 
 
 }
