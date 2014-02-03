@@ -1,6 +1,7 @@
 package com.kaidoe.sojero;
 
 import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
@@ -40,7 +41,7 @@ public class ServiceContext
 
         ServiceNode selfServiceNode = null;
         try {
-            selfServiceNode = new ServiceNode(Inet4Address.getLocalHost(), zmqPubPort);
+            selfServiceNode = new ServiceNode(InetAddress.getByName(null), zmqPubPort);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }

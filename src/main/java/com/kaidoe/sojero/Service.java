@@ -34,27 +34,42 @@ public class Service {
 			return serviceID;
     }
 
+    private void emitServiceMsg(ServiceMsg serviceMsg) {
+
+        // fire event across the network
+        serviceContext.emitServiceMsg(serviceMsg);
+
+        // fire any local handlers
+        onServiceMsg(serviceMsg);
+
+    }
+
     /**
-     * Emit an event on the network
+     * Sugar for event on the network
      *
      */
     public void trigger(String eventID, byte[] data)
     {
 
-        serviceContext.emitServiceMsg(
-                new ServiceMsg(serviceID, ServiceMsg.MsgType.EVENT, eventID, data));
+        emitServiceMsg(new ServiceMsg(serviceID, ServiceMsg.MsgType.EVENT, eventID, data));
 
     }
 
     /**
-     * Trigger a command on the network
+     * Sugar for command on the network
      *
      */
     public void execute(String commandtID, byte[] data)
     {
 
-        serviceContext.emitServiceMsg(
-                new ServiceMsg(serviceID, ServiceMsg.MsgType.COMMAND, commandtID, data));
+        emitServiceMsg(new ServiceMsg(serviceID, ServiceMsg.MsgType.COMMAND, commandtID, data));
+
+    }
+
+    public void execute(String commandtID)
+    {
+
+        emitServiceMsg(new ServiceMsg(serviceID, ServiceMsg.MsgType.COMMAND, commandtID, new byte[0]));
 
     }
 
