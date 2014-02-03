@@ -179,6 +179,7 @@ public class ServiceDiscovery {
                 try {
                     socket.receive(incoming);
                     ServiceNode receivedNode = ServiceNode.getFromByteArray(incoming.getData());
+                    selfServiceNode.setIpAddress(incoming.getAddress());
                     serviceDiscovery.foundNode(receivedNode);
                 } catch (IOException e) {
                     e.printStackTrace();

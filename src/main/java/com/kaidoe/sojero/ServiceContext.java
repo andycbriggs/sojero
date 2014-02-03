@@ -1,5 +1,7 @@
 package com.kaidoe.sojero;
 
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import org.zeromq.ZContext;
@@ -36,7 +38,12 @@ public class ServiceContext
         contextPoller = new ServiceContextPoller(this);
         contextPoller.start();
 
-        ServiceNode selfServiceNode = new ServiceNode("127.0.0.1", zmqPubPort);
+        ServiceNode selfServiceNode = null;
+        try {
+            selfServiceNode = new ServiceNode(Inet4Address.getLocalHost(), zmqPubPort);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
 
         // service discovery
         serviceDiscovery = new ServiceDiscovery(this, selfServiceNode);
@@ -103,14 +110,14 @@ public class ServiceContext
     public void connectServiceNode(ServiceNode serviceNode)
     {
 
-        zmqSubscriber.connect("tcp://" + serviceNode.getIpAddress() + ":" + serviceNode.getPubPort());
+        zmqSubscriber.connect("tcp://" + serviceNode.getInetAddress().getHostAddress() + ":" + serviceNode.getPubPort());
 
     }
 
     public void disconnectServiceNode(ServiceNode serviceNode)
     {
 
-        zmqSubscriber.disconnect("tcp://" + serviceNode.getIpAddress() + ":" + serviceNode.getPubPort());
+        zmqSubscriber.disconnect("tcp://" + serviceNode.getInetAddress().getHostAddress() + ":" + serviceNode.getPubPort());
 
     }
 
