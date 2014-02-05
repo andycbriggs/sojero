@@ -1,6 +1,5 @@
 package com.kaidoe.sojero;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -12,7 +11,7 @@ import org.zeromq.ZMsg;
 public class ServiceContext
 {
 
-	private ArrayList<Service> servicesList = new ArrayList<Service>();
+	private ArrayList<Service> services = new ArrayList<Service>();
 
     private ZContext zmqContext;
     public ZMQ.Socket zmqPublisher;
@@ -35,19 +34,19 @@ public class ServiceContext
         // pub sub
         zmqPublisher = zmqContext.createSocket(ZMQ.PUB);
         long zmqPubPort = zmqPublisher.bindToRandomPort("tcp://*");
-        zmqSubscriber = zmqContext.createSocket(ZMQ.SUB);
-        contextPoller = new ServiceContextPoller(this);
-        contextPoller.start();
 
-        ServiceNode selfServiceNode = null;
+        // service discovery
         try {
-            selfServiceNode = new ServiceNode(InetAddress.getByName(null), zmqPubPort);
+            serviceDiscovery = new ServiceDiscovery(this, zmqPubPort);
         } catch (UnknownHostException e) {
+            // this node doesn't have a network
+            // TODO: the library should work without a network
             e.printStackTrace();
         }
 
-        // service discovery
-        serviceDiscovery = new ServiceDiscovery(this, selfServiceNode);
+        zmqSubscriber = zmqContext.createSocket(ZMQ.SUB);
+        contextPoller = new ServiceContextPoller(this);
+        contextPoller.start();
 
     }
 
@@ -74,20 +73,20 @@ public class ServiceContext
 	public Service getService(String theServiceID)
 	{
 		// get service
-        for (Service thisService : servicesList) {
+        for (Service thisService : services) {
             if (thisService.getServiceID().equals(theServiceID)) return thisService;
         }
 
 		// otherwise create service
 		Service theService = new Service(this, theServiceID);
-		servicesList.add(theService);
+		services.add(theService);
 		return theService;
 	}
 
     private synchronized void triggerEventOnService(String serviceID, ServiceMsg serviceMsg)
     {
 
-        for (Service service : servicesList) {
+        for (Service service : services) {
             if (service.getServiceID().equals(serviceID)) service.onServiceMsg(serviceMsg);
         }
 

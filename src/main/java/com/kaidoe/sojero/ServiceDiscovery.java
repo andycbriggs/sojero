@@ -19,13 +19,13 @@ public class ServiceDiscovery {
 
     protected static final int discoveryPort = 12880;
 
-    public ServiceDiscovery(ServiceContext serviceContext, ServiceNode selfServiceNode)
-    {
+    public ServiceDiscovery(ServiceContext serviceContext, long zmqPubPort) throws UnknownHostException {
+
         this.serviceContext = serviceContext;
 
-        this.selfServiceNode = selfServiceNode;
-
         serviceNodeList = new ArrayList<ServiceNode>();
+
+        this.selfServiceNode = new ServiceNode(InetAddress.getByName("127.0.0.1"), zmqPubPort);
 
         ServiceDiscoveryPoller sdp = new ServiceDiscoveryPoller(this);
         sdp.start();
@@ -108,10 +108,9 @@ public class ServiceDiscovery {
         byte[] beaconBytes = serviceNode.toByteArray();
         DatagramPacket dp = new DatagramPacket(beaconBytes, beaconBytes.length);
         s.setBroadcast(true);
-        s.connect(new InetSocketAddress("255.255.255.255", discoveryPort));
+        s.connect(new InetSocketAddress(InetAddress.getByName("255.255.255.255"), discoveryPort));
         s.send(dp);
         s.close();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -179,14 +178,11 @@ public class ServiceDiscovery {
                 try {
                     socket.receive(incoming);
                     ServiceNode receivedNode = ServiceNode.getFromByteArray(incoming.getData());
-                    selfServiceNode.setIpAddress(incoming.getAddress());
+                    receivedNode.setIpAddress(incoming.getAddress());
                     serviceDiscovery.foundNode(receivedNode);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (ClassNotFoundException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
-
 
 
             }

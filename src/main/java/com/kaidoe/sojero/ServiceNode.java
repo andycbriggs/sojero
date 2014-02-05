@@ -14,21 +14,21 @@ public class ServiceNode implements Serializable {
     private UUID nodeUUID;
     private long pongTime;
 
-    public static ServiceNode getFromByteArray(byte[] byteArray) throws ClassNotFoundException {
+    public static ServiceNode getFromByteArray(byte[] byteArray) throws Exception {
         try {
             ByteArrayInputStream b = new ByteArrayInputStream(byteArray);
             ObjectInputStream o = new ObjectInputStream(b);
             Object obj = o.readObject();
-            if (obj.getClass() == ServiceNode.class)
-                return (ServiceNode) obj;
+            return (ServiceNode) obj;
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
-        throw (new ClassNotFoundException());
+        throw new Exception("Error in Discovered Service Node");
     }
 
-    public ServiceNode(InetAddress ipAddress, long pubPort)
-    {
+    public ServiceNode(InetAddress ipAddress, long pubPort) {
         this.nodeUUID = UUID.randomUUID();
         this.ipAddress = ipAddress;
         this.pubPort = pubPort;
@@ -36,12 +36,10 @@ public class ServiceNode implements Serializable {
     }
 
     public byte[] toByteArray() throws IOException {
-
         ByteArrayOutputStream b = new ByteArrayOutputStream();
         ObjectOutputStream o = new ObjectOutputStream(b);
         o.writeObject(this);
         return b.toByteArray();
-
     }
 
     public InetAddress getInetAddress() {
