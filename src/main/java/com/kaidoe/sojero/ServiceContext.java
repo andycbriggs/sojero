@@ -153,7 +153,10 @@ public class ServiceContext
 
             while (!this.isInterrupted() && !flagStop) {
 
+                // TODO: Poller is throwing an assertion error because it's not cleaning up disconnected clients properly
+
                 ZMQ.poll(items, 10);
+
                 if (items[0].isReadable()) {
                     ZMsg msg = ZMsg.recvMsg(zmqSubscriber);
                     ServiceMsg serviceMsg = new ServiceMsg(msg);
