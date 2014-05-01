@@ -12,8 +12,9 @@ public class ServiceDiscovery {
     private final ArrayList<ServiceNode> serviceNodeList;
 
     private ServiceNode selfServiceNode;
-
     private ServiceContext serviceContext;
+    private ServiceDiscoveryPoller sdp;
+    private Timer timer;
 
     private static long TIMEOUT = 5000;
 
@@ -27,10 +28,10 @@ public class ServiceDiscovery {
 
         this.selfServiceNode = new ServiceNode(InetAddress.getByName("127.0.0.1"), zmqPubPort);
 
-        ServiceDiscoveryPoller sdp = new ServiceDiscoveryPoller(this);
+        sdp = new ServiceDiscoveryPoller(this);
         sdp.start();
 
-        Timer timer = new Timer();
+        timer = new Timer();
         timer.schedule(new PingPongTask(), 0, ServiceDiscovery.TIMEOUT / 2);
     }
 
@@ -40,7 +41,7 @@ public class ServiceDiscovery {
 
     }
 
-    public synchronized void foundNode(ServiceNode serviceNode)
+    public void foundNode(ServiceNode serviceNode)
     {
 
         // if the node already exists, pong it!
@@ -63,7 +64,7 @@ public class ServiceDiscovery {
 
     }
 
-    public synchronized void addServiceNode(ServiceNode serviceNode)
+    public void addServiceNode(ServiceNode serviceNode)
     {
 
         serviceNodeList.add(serviceNode);
@@ -71,7 +72,7 @@ public class ServiceDiscovery {
 
     }
 
-    public synchronized void removeTimedOutNodes()
+    public void removeTimedOutNodes()
     {
 
         long currentTime = System.currentTimeMillis();
@@ -88,29 +89,29 @@ public class ServiceDiscovery {
 
     }
 
-    public synchronized List<ServiceNode> getServiceNodeList()
+    public List<ServiceNode> getServiceNodeList()
     {
 
         return serviceNodeList;
     }
 
-    public synchronized void emitBeacon()
+    public void emitBeacon()
     {
         emitBeacon(selfServiceNode);
     }
 
-    public synchronized void emitBeacon(ServiceNode serviceNode)
+    public void emitBeacon(ServiceNode serviceNode)
     {
 
         try {
-        DatagramSocket s = new DatagramSocket();
+            DatagramSocket s = new DatagramSocket();
 
-        byte[] beaconBytes = serviceNode.toByteArray();
-        DatagramPacket dp = new DatagramPacket(beaconBytes, beaconBytes.length);
-        s.setBroadcast(true);
-        s.connect(new InetSocketAddress(InetAddress.getByName("255.255.255.255"), discoveryPort));
-        s.send(dp);
-        s.close();
+            byte[] beaconBytes = serviceNode.toByteArray();
+            DatagramPacket dp = new DatagramPacket(beaconBytes, beaconBytes.length);
+            s.setBroadcast(true);
+            s.connect(new InetSocketAddress(InetAddress.getByName("255.255.255.255"), discoveryPort));
+            s.send(dp);
+            s.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -126,6 +127,20 @@ public class ServiceDiscovery {
     public int countServiceNodes() {
 
         return serviceNodeList.size();
+
+    }
+
+    public void setFlagStop() {
+
+        timer.cancel();
+        timer.purge();
+        sdp.setFlagStop(true);
+        sdp.interrupt();
+        try {
+            sdp.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -151,6 +166,8 @@ public class ServiceDiscovery {
 
         private DatagramSocket socket;
 
+        private boolean flagStop;
+
         public ServiceDiscoveryPoller(ServiceDiscovery serviceDiscovery)
         {
             super("ServiceDiscoveryPoller");
@@ -171,15 +188,21 @@ public class ServiceDiscovery {
 
             byte[] buffer = new byte[2048];
 
-            while (!Thread.currentThread().isInterrupted())
+            while (!Thread.currentThread().isInterrupted() && !flagStop)
             {
 
                 DatagramPacket incoming = new DatagramPacket(buffer, buffer.length);
                 try {
                     socket.receive(incoming);
+
+                    // check if the thread has been interrupted since calling receive
+                    if (Thread.currentThread().isInterrupted() || flagStop) break;
+
                     ServiceNode receivedNode = ServiceNode.getFromByteArray(incoming.getData());
                     receivedNode.setIpAddress(incoming.getAddress());
                     serviceDiscovery.foundNode(receivedNode);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -187,7 +210,12 @@ public class ServiceDiscovery {
 
             }
 
+            socket.close();
+
         }
 
+        public void setFlagStop(boolean flagStop) {
+            this.flagStop = flagStop;
+        }
     }
 }

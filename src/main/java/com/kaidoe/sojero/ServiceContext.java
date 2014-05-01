@@ -7,13 +7,14 @@ import java.util.ArrayList;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
+import zmq.Poller;
 
 public class ServiceContext
 {
 
 	private ArrayList<Service> services = new ArrayList<Service>();
 
-    private ZContext zmqContext;
+    public ZContext zmqContext;
     public ZMQ.Socket zmqPublisher;
     public ZMQ.Socket zmqSubscriber;
 
@@ -34,6 +35,7 @@ public class ServiceContext
         // pub sub
         zmqPublisher = zmqContext.createSocket(ZMQ.PUB);
         long zmqPubPort = zmqPublisher.bindToRandomPort("tcp://*");
+        zmqPublisher.setLinger(0);
 
         // service discovery
         try {
@@ -45,6 +47,7 @@ public class ServiceContext
         }
 
         zmqSubscriber = zmqContext.createSocket(ZMQ.SUB);
+        zmqSubscriber.setLinger(0);
         contextPoller = new ServiceContextPoller(this);
         contextPoller.start();
 
@@ -59,6 +62,11 @@ public class ServiceContext
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        serviceDiscovery.setFlagStop();
+
+        zmqContext.destroySocket(zmqSubscriber);
+        zmqContext.destroySocket(zmqPublisher);
 
         zmqContext.destroy();
 
@@ -153,8 +161,6 @@ public class ServiceContext
 
             while (!this.isInterrupted() && !flagStop) {
 
-                // TODO: Poller is throwing an assertion error because it's not cleaning up disconnected clients properly
-
                 ZMQ.poll(items, 10);
 
                 if (items[0].isReadable()) {
@@ -164,8 +170,6 @@ public class ServiceContext
                     msg = null;
                     serviceContext.triggerEventOnService(serviceMsg.getServiceID(), serviceMsg);
                 }
-
-                if (flagStop) break;
 
             }
 
