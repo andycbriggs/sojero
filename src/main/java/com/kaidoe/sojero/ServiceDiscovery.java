@@ -41,8 +41,10 @@ public class ServiceDiscovery {
 
     }
 
-    public void foundNode(ServiceNode serviceNode)
+    public synchronized void foundNode(ServiceNode serviceNode)
     {
+
+
 
         // if the node already exists, pong it!
         Iterator<ServiceNode> i = serviceNodeList.iterator();
@@ -62,9 +64,11 @@ public class ServiceDiscovery {
         // otherwise add a new node
         addServiceNode(serviceNode);
 
+
+
     }
 
-    public void addServiceNode(ServiceNode serviceNode)
+    public synchronized void addServiceNode(ServiceNode serviceNode)
     {
 
         serviceNodeList.add(serviceNode);
@@ -72,7 +76,7 @@ public class ServiceDiscovery {
 
     }
 
-    public void removeTimedOutNodes()
+    public synchronized void removeTimedOutNodes()
     {
 
         long currentTime = System.currentTimeMillis();
@@ -87,20 +91,21 @@ public class ServiceDiscovery {
             }
         }
 
+
     }
 
-    public List<ServiceNode> getServiceNodeList()
+    public synchronized List<ServiceNode> getServiceNodeList()
     {
 
         return serviceNodeList;
     }
 
-    public void emitBeacon()
+    public synchronized void emitBeacon()
     {
         emitBeacon(selfServiceNode);
     }
 
-    public void emitBeacon(ServiceNode serviceNode)
+    public synchronized void emitBeacon(ServiceNode serviceNode)
     {
 
         try {
@@ -118,13 +123,13 @@ public class ServiceDiscovery {
 
     }
 
-    public void setSelfServiceNode(ServiceNode selfServiceNode) {
+    public synchronized void setSelfServiceNode(ServiceNode selfServiceNode) {
 
         this.selfServiceNode = selfServiceNode;
 
     }
 
-    public int countServiceNodes() {
+    public synchronized int countServiceNodes() {
 
         return serviceNodeList.size();
 
@@ -200,7 +205,9 @@ public class ServiceDiscovery {
 
                     ServiceNode receivedNode = ServiceNode.getFromByteArray(incoming.getData());
                     receivedNode.setIpAddress(incoming.getAddress());
+
                     serviceDiscovery.foundNode(receivedNode);
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (Exception e) {

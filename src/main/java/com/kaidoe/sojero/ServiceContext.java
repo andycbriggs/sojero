@@ -125,7 +125,7 @@ public class ServiceContext
     public void disconnectServiceNode(ServiceNode serviceNode)
     {
 
-        zmqSubscriber.disconnect("tcp://" + serviceNode.getInetAddress().getHostAddress() + ":" + serviceNode.getPubPort());
+        //zmqSubscriber.disconnect("tcp://" + serviceNode.getInetAddress().getHostAddress() + ":" + serviceNode.getPubPort());
 
     }
 
@@ -161,7 +161,9 @@ public class ServiceContext
 
             while (!this.isInterrupted() && !flagStop) {
 
-                ZMQ.poll(items, 10);
+                ZMQ.poll(items, 100);
+
+                if (this.isInterrupted() && flagStop) break;
 
                 if (items[0].isReadable()) {
                     ZMsg msg = ZMsg.recvMsg(zmqSubscriber);
