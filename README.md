@@ -14,7 +14,7 @@ for keeping track of Unit tests.
 ## Classes
 
 ```java
-Provides service discovery
+// Provides service discovery
 ServiceInterface
 
 // Provides an interface for an individual service
